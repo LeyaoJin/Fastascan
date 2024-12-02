@@ -19,8 +19,7 @@ for file in $(find "$folder" -type f -name "*.fasta" -o -name "*.fa"); do
     total_files=$((total_files + 1))
     
     # Fasta IDs
-    unique_ids=$(awk '/^>/{print $1}' "$file" | sort | uniq | wc -l)
-    total_unique_ids=$((total_unique_ids + unique_ids))
+    all_ids+=$(awk '/^>/{print $1}' "$file" | sort | uniq)
     
     # Symlink
     if [ -L "$file" ]; then
@@ -34,6 +33,8 @@ for file in $(find "$folder" -type f -name "*.fasta" -o -name "*.fa"); do
     echo "Is this a symlink: $symlink"
     echo "-------------------------------"
 done
+
+total_unique_ids=$(echo "$all_ids" | sort | uniq | wc -l)
 
 echo "=== Process summary ==="
 echo "Total files processed: $total_files"
