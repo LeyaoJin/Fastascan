@@ -45,7 +45,7 @@ find "$folder" -type f \( -name "*.fasta" -o -name "*.fa" \) | while read -r fil
     # Process file content
     cleaned_file=$(awk '/^[^>]/ {gsub(/[-\t\r\v\f]/, ""); ORS=""; print $0}' "$file")
     num_sequences=$(grep -c '^>' "$file")
-    total_length=${#cleaned_file}
+    total_length=$(echo -n "$cleaned_file" | wc -c)
 
     if echo "$cleaned_file" | grep -q '^[ACGTUN-]*$'; then
         file_type="Nucleotides"
