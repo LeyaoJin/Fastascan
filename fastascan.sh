@@ -96,6 +96,8 @@ if [[ -n "$all_ids" ]]; then
 else
     total_unique_ids=0
 fi
+# Observation: Also you can see that in all_ids, IDs was sorted before adding to the variable,
+# this was performed in order to improve the efficiency in large datasets in this final sort
 
 echo "=== Process summary ==="
 echo "Total files processed: $total_files"
