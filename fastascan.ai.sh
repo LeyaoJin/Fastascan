@@ -40,8 +40,7 @@ find "$folder" -type f \( -name "*.fasta" -o -name "*.fa" \) | while read -r fil
     total_files=$((total_files + 1))
 
     # Extract IDs and sort/unique them progressively
-    current_ids=$(awk '/^>/{print $1}' "$file" | sort | uniq)
-    all_ids=$(echo -e "$all_ids\n$current_ids" | sort | uniq)
+    all_ids+=$(awk '/^>/{print $1}' "$file" | sort | uniq)
 
     # Process file content
     cleaned_file=$(awk '/^[^>]/ {gsub(/[-\t\r\v\f]/, ""); ORS=""; print $0}' "$file")
