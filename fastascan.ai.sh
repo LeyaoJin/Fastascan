@@ -12,11 +12,9 @@ if [ -n "$2" ]; then
 fi
 
 total_files=0
+all_ids=""
 
-# Temporary file to store IDs
-temp_ids=$(mktemp)
-
-# Process files in the given folder and its subfolders
+# Process files in the given folder and subfolders
 find "$folder" -type f \( -name "*.fasta" -o -name "*.fa" \) | while read -r file; do
 
     # Validate FASTA file
@@ -41,18 +39,16 @@ find "$folder" -type f \( -name "*.fasta" -o -name "*.fa" \) | while read -r fil
     # Increment valid file count
     total_files=$((total_files + 1))
 
-    # Extract FASTA IDs and add them to the temporary file
-    awk '/^>/{print $1}' "$file" >> "$temp_ids"
-
-    # Clean the temporary file progressively (sort and remove duplicates)
-    sort -u -o "$temp_ids" "$temp_ids"
+    # Extract IDs and sort/unique them progressively
+    current_ids=$(awk '/^>/{print $1}' "$file" | sort | uniq)
+    all_ids=$(echo -e "$all_ids\n$current_ids" | sort | uniq)
 
     # Process file content
     cleaned_file=$(awk '/^[^>]/ {gsub(/[-\t\r\v\f]/, ""); ORS=""; print $0}' "$file")
     num_sequences=$(grep -c '^>' "$file")
     total_length=${#cleaned_file}
 
-    if [[ $cleaned_file =~ ^[ACGTUN-]*$ ]]; then
+    if echo "$cleaned_file" | grep -q '^[ACGTUN-]*$'; then
         file_type="Nucleotides"
     else
         file_type="Amino acids"
@@ -79,12 +75,14 @@ find "$folder" -type f \( -name "*.fasta" -o -name "*.fa" \) | while read -r fil
 done
 
 # Count total unique IDs
-total_unique_ids=$(wc -l < "$temp_ids")
+if [[ -n "$all_ids" ]]; then
+    total_unique_ids=$(echo "$all_ids" | sort | uniq |wc -l)
+else
+    total_unique_ids=0
+fi
 
 # Final summary
 echo "=== Process summary ==="
 echo "Total files processed: $total_files"
 echo "Total unique fasta IDs: $total_unique_ids"
 
-# Clean up temporary file
-rm -f "$temp_ids"
