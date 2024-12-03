@@ -13,29 +13,30 @@ fi
 
 total_files=0
 
-#Validate fasta
-validate_fasta() {
-    file=$1
-    valid=0 #Since we can not use return, I made a DIY return
-    [[ $(grep '^>' "$file") ]] || valid=1
-    [[ $(grep -v '^>' "$file" | grep '[ACGTUNacgtunARNDCEQGHILKMFPSTWYVarnqceqghilkmfpstwyv]*') ]] || valid=1
-    [[ -s "$file" ]] || valid=1
-}
-
 # Process files in the given folder (and subfolders)
 for file in $(find "$folder" -type f -name "*.fasta" -o -name "*.fa"); do
-    validate_fasta "$file"
-    if [[ $valid -eq 1 ]]; then
-        echo "Error: $file is an invalid FASTA file. Skipping..."
+
+    #Validate fasta
+    if ! [[ -s "$file" ]]; then
+        echo "Error: $file is an empty FASTA file. Skipping..."
+        echo "-------------------------------"
+        continue
+    elif ! [[ $(grep '^>' "$file") ]]; then
+        echo "Error: $file is an invalid FASTA file without headers. Skipping..."
+        echo "-------------------------------"
+        continue
+    elif ! [[ $(grep -v '^>' "$file" | grep -i '[ACGTUNRDEQHILKMFPSWYV]*') ]]; then
+        echo "Error: $file is an invalid FASTA file without sequences. Skipping..."
         echo "-------------------------------"
         continue
     fi
 
+    #Total files counter
     total_files=$((total_files + 1))
-    
+
     # Fasta IDs
     all_ids+=$(awk '/^>/{print $1}' "$file" | sort | uniq)
-    
+
     # Symlink
     if [ -L "$file" ]; then
         symlink="Yes"
@@ -43,9 +44,22 @@ for file in $(find "$folder" -type f -name "*.fasta" -o -name "*.fa"); do
         symlink="No"
     fi
 
+    #Number of sequences en total length
+    num_sequences=$(grep -c '^>' "$file")
+    total_length=$(awk 'NF>0 && /^[^>]/ {ORS=""; print $0}' "$file" | sed 's/-//g' | wc -c)
+
+    # Determine if it's nucleotide or amino acid
+    if [[ $(grep -v '^>' "$file" | grep -i '[ACGTUN]*') ]]; then
+        file_type="Nucleotides"
+    else
+        file_type="Amino acids"
+    fi
+
     # Header
     echo "=== File: $file ==="
     echo "Is this a symlink: $symlink"
+    echo "Number of sequences: $num_sequences"
+    echo "Total sequence length: $total_length"
     echo "-------------------------------"
 done
 
