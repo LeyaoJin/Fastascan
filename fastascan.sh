@@ -16,25 +16,16 @@ total_files=0
 #Validate fasta
 validate_fasta() {
     file=$1
-    valid=0
-
-    if ! [[ $(grep '^>' "$file") ]]; then
-        valid=1
-    fi
-
-    if ! [[ $(grep -v '^>' "$file" | grep '[ACGTUNacgtunARNDCEQGHILKMFPSTWYVarnqceqghilkmfpstwyv]*') ]]; then
-        valid=1
-    fi
-
-    if ! [[ -s "$file" ]]; then
-        valid=1
-    fi
+    valid=0 #Since we can not use return, I made a DIY return
+    [[ $(grep '^>' "$file") ]] || valid=1
+    [[ $(grep -v '^>' "$file" | grep '[ACGTUNacgtunARNDCEQGHILKMFPSTWYVarnqceqghilkmfpstwyv]*') ]] || valid=1
+    [[ -s "$file" ]] || valid=1
 }
 
 # Process files in the given folder (and subfolders)
 for file in $(find "$folder" -type f -name "*.fasta" -o -name "*.fa"); do
     validate_fasta "$file"
-    if [[ $valid -gt 0 ]]; then
+    if [[ $valid -eq 1 ]]; then
         echo "Error: $file is an invalid FASTA file. Skipping..."
         echo "-------------------------------"
         continue
