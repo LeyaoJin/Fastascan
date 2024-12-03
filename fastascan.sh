@@ -12,10 +12,36 @@ if [ -n "$2" ]; then
 fi
 
 total_files=0
-total_unique_ids=0
+
+#Validate fasta
+validate_fasta() {
+    file=$1
+    if [[ ! $(grep -q '^>' "$file") ]]; then
+        echo "Error, invalid FASTA file: $file"
+        return 1 
+    fi
+
+    if [[ $(grep -q '[^ACGTNacgtnARNDCEQGHILKMFPSTWYVarnqceqghilkmfpstwyv]' "$file") ]]; then
+        echo "Error, file contains invalid characters: $file"
+        return 1  
+    fi
+
+    # Check if the file is empty
+    if [[ ! -s "$file" ]]; then
+        echo "Error, empty file: $file"
+        return 1 
+    fi
+
+    # If all checks pass, return 0 (valid file)
+    return 0
+}
 
 # Process files in the given folder (and subfolders)
 for file in $(find "$folder" -type f -name "*.fasta" -o -name "*.fa"); do
+    if [[ ! validate_fasta "$file" ]]; then
+        continue
+    fi
+
     total_files=$((total_files + 1))
     
     # Fasta IDs
